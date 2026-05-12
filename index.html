@@ -360,15 +360,16 @@ async function getFTToken(){
 async function getCityCode(loc){
   if(!loc) return null
   try{
-    // Si code postal direct
-    var cpMatch = loc.match(/\b(\d{5})\b/)
+    var q = loc.trim()
+    // Code postal → chercher commune
+    var cpMatch = q.match(/^(\d{5})$/)
     if(cpMatch){
-      var r = await fetch('https://geo.api.gouv.fr/communes?codePostal='+cpMatch[1]+'&fields=code&limit=1')
+      var r = await fetch('https://geo.api.gouv.fr/communes?codePostal='+cpMatch[1]+'&fields=code,codesPostaux&limit=1')
       var d = await r.json()
-      return d[0] ? d[0].code : null
+      if(d[0]) return d[0].code
     }
-    // Sinon nom de ville
-    var r = await fetch('https://geo.api.gouv.fr/communes?nom='+encodeURIComponent(loc)+'&fields=code&limit=1')
+    // Nom de ville
+    var r = await fetch('https://geo.api.gouv.fr/communes?nom='+encodeURIComponent(q)+'&fields=code&boost=population&limit=1')
     var d = await r.json()
     return d[0] ? d[0].code : null
   }catch(e){ return null }
