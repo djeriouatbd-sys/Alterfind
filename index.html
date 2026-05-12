@@ -95,6 +95,9 @@ td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-al
       <input type="password" id="auth-pwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')authSubmit()">
     </div>
     <button class="btn bp" onclick="authSubmit()" id="auth-btn" style="width:100%;margin-bottom:12px">Connexion</button>
+    <div id="forgot-link" style="text-align:right;margin-top:-6px;margin-bottom:12px">
+      <a href="#" onclick="showForgot()" style="font-size:12px;color:var(--text2)">Mot de passe oublié ?</a>
+    </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
       <div style="flex:1;height:1px;background:var(--border)"></div>
       <span style="font-size:12px;color:var(--text2)">ou</span>
@@ -105,6 +108,21 @@ td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-al
       Continuer avec Google
     </button>
     <div id="auth-msg" class="auth-msg" style="display:none"></div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgot-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center">
+  <div class="auth-box" style="max-width:380px">
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;margin-bottom:.5rem">Réinitialiser le mot de passe</div>
+    <div style="color:var(--text2);font-size:13px;margin-bottom:1.5rem">Entre ton email, tu recevras un lien de réinitialisation.</div>
+    <div class="auth-input">
+      <label class="lbl">Adresse email</label>
+      <input type="email" id="forgot-email" placeholder="ton@email.com">
+    </div>
+    <button class="btn bp" onclick="sendReset()" style="width:100%;margin-bottom:10px">Envoyer le lien</button>
+    <button onclick="hideForgot()" style="background:none;border:none;color:var(--text2);font-size:13px;cursor:pointer;width:100%">Annuler</button>
+    <div id="forgot-msg" class="auth-msg" style="display:none;margin-top:10px"></div>
   </div>
 </div>
 
@@ -134,6 +152,16 @@ td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-al
           <button onclick="toggleKey()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px" id="eye-btn">👁</button>
         </div>
         <span class="key-saved" id="key-saved">✓ Sauvegardée</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+        <span style="font-size:12px;color:var(--text2);white-space:nowrap">🏢 France Travail (<a href="https://francetravail.io" target="_blank" style="color:var(--accent)">francetravail.io</a>) :</span>
+        <div class="key-row" style="flex:1;margin:0">
+          <input type="text" id="ft-id" placeholder="Client ID..." oninput="saveFTKey()" style="font-size:12px">
+        </div>
+        <div class="key-row" style="flex:1;margin:0">
+          <input type="password" id="ft-secret" placeholder="Client Secret..." oninput="saveFTKey()" style="font-size:12px">
+        </div>
+        <span class="key-saved" id="ft-saved">✓ Sauvegardée</span>
       </div>
     </div>
 
@@ -290,6 +318,84 @@ window.onload = async function(){
   })
 }
 
+// ── FORGOT PASSWORD ──
+function showForgot(){
+  $('forgot-modal').style.display='flex'
+  $('forgot-email').value = $('auth-email').value || ''
+  $('forgot-msg').style.display='none'
+}
+function hideForgot(){ $('forgot-modal').style.display='none' }
+
+async function sendReset(){
+  var email = $('forgot-email').value.trim()
+  if(!email){ 
+    var m=$('forgot-msg'); m.textContent='Entre ton email'; m.className='auth-msg err'; m.style.display='block'; return 
+  }
+  var {error} = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname + '?reset=true'
+  })
+  var m = $('forgot-msg')
+  m.style.display='block'
+  if(error){ m.textContent='Erreur : '+error.message; m.className='auth-msg err' }
+  else { m.textContent='✅ Lien envoyé ! Vérifie ta boîte mail.'; m.className='auth-msg ok' }
+}
+
+// Gérer le retour reset password
+if(window.location.hash.includes('type=recovery')){
+  window.addEventListener('load', function(){
+    var newPwd = prompt('Entre ton nouveau mot de passe (6 caractères min) :')
+    if(newPwd && newPwd.length >= 6){
+      sb.auth.updateUser({password: newPwd}).then(function(r){
+        if(r.error) alert('Erreur : '+r.error.message)
+        else { alert('✅ Mot de passe mis à jour !'); window.location.hash='' }
+      })
+    }
+  })
+}
+
+// ── FRANCE TRAVAIL API ──
+function saveFTKey(){
+  localStorage.setItem('af_ft_id', $('ft-id').value)
+  localStorage.setItem('af_ft_secret', $('ft-secret').value)
+  var el=$('ft-saved'); el.style.display='inline'
+  setTimeout(function(){el.style.display='none'},2000)
+}
+
+async function getFTToken(){
+  var id=($('ft-id')?$('ft-id').value.trim():'')||localStorage.getItem('af_ft_id')||''
+  var secret=($('ft-secret')?$('ft-secret').value.trim():'')||localStorage.getItem('af_ft_secret')||''
+  if(!id||!secret) return null
+  try{
+    var res = await fetch('https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=%2Fpartenaire', {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:'grant_type=client_credentials&client_id='+encodeURIComponent(id)+'&client_secret='+encodeURIComponent(secret)+'&scope=api_offresdemploiv2+o2dsoffre'
+    })
+    var data = await res.json()
+    return data.access_token || null
+  }catch(e){ return null }
+}
+
+async function searchFTOffers(kw, loc){
+  var token = await getFTToken()
+  if(!token) return null
+  try{
+    var params = new URLSearchParams({
+      motsCles: kw,
+      typeContrat: 'E2', // Alternance
+      range: '0-14',
+      sort: 1
+    })
+    if(loc) params.set('commune', loc)
+    var res = await fetch('https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search?'+params, {
+      headers:{'Authorization':'Bearer '+token,'Accept':'application/json'}
+    })
+    if(!res.ok) return null
+    var data = await res.json()
+    return data.resultats || null
+  }catch(e){ return null }
+}
+
 var authMode = 'login'
 
 function switchAuthTab(mode){
@@ -298,6 +404,7 @@ function switchAuthTab(mode){
   document.getElementById('tab-'+mode).classList.add('active')
   var btn = document.getElementById('auth-btn')
   btn.textContent = mode === 'login' ? 'Connexion' : 'Créer mon compte'
+  $('forgot-link').style.display = mode === 'login' ? 'block' : 'none'
 }
 
 async function authSubmit(){
@@ -353,6 +460,10 @@ function showApp(){
   if(currentUser) $('user-email').textContent = currentUser.email
   var k = localStorage.getItem('af_k')
   if(k){ $('gk').value = k; showKeySaved() }
+  var ftId = localStorage.getItem('af_ft_id')
+  var ftSecret = localStorage.getItem('af_ft_secret')
+  if(ftId && $('ft-id')) $('ft-id').value = ftId
+  if(ftSecret && $('ft-secret')) $('ft-secret').value = ftSecret
   loadCands()
   renderSuivi()
   // Charger les CVs sauvegardés
@@ -556,11 +667,32 @@ function getDemos(kw,loc){
   return result
 }
 
-function doSearch(){
+async function doSearch(){
   var kw=$('skw').value.trim();if(!kw)return
   $('sld').style.display='block';$('olist').innerHTML='';$('dp').classList.remove('open')
   $('sbtn').disabled=true;sel.clear();dec.clear();updVB()
-  offers=getDemos(kw,$('sloc').value)
+  
+  // Essayer France Travail API
+  var ftOffers = await searchFTOffers(kw, $('sloc').value)
+  if(ftOffers && ftOffers.length > 0){
+    offers = ftOffers.map(function(o, i){
+      return {
+        id: o.id || ('ft'+i),
+        title: o.intitule || 'Poste',
+        company: (o.entreprise && o.entreprise.nom) || 'Entreprise',
+        location: (o.lieuTravail && o.lieuTravail.libelle) || '',
+        dist: 0,
+        url: o.origineOffre && o.origineOffre.urlOrigine ? o.origineOffre.urlOrigine : (o.contact && o.contact.urlPostulation ? o.contact.urlPostulation : '#'),
+        type: [o.typeContratLibelle, o.salaire && o.salaire.libelle].filter(Boolean).join(' · '),
+        desc: o.description ? o.description.substring(0,300)+'...' : '',
+        profil: o.formations ? o.formations.map(function(f){return f.commentaire}).join(', ') : ''
+      }
+    })
+  } else {
+    // Fallback offres démo
+    offers = getDemos(kw, $('sloc').value)
+  }
+  
   $('sld').style.display='none';$('sbtn').disabled=false
   renderOffers()
 }
