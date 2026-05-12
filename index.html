@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlterFind</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--border:rgba(255,255,255,0.07);--accent:#6c63ff;--accent2:#ff6584;--accent3:#43e97b;--text:#f0f0f8;--text2:#8888aa;--card:#13131e;--r:12px;--rs:8px}
+*{box-sizing:border-box;margin:0;padding:0}html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+input,select,textarea,button{font-family:'DM Sans',sans-serif;outline:none}
+input,select,textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 14px;color:var(--text);font-size:13px;transition:border .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}textarea{resize:vertical}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,10,15,.93);backdrop-filter:blur(12px);z-index:100}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;background:linear-gradient(135deg,#6c63ff,#ff6584);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.tabs{display:flex;gap:4px;background:var(--bg2);border-radius:10px;padding:4px}
+.tab{padding:6px 16px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-size:13px;cursor:pointer;transition:all .2s}
+.tab.active{background:var(--accent);color:white}
+.main{padding:2rem;max-width:900px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;margin-bottom:1rem}
+.h1{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;text-align:center;margin-bottom:1.5rem}
+.g1{background:linear-gradient(135deg,#6c63ff,#ff6584);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.g2{background:linear-gradient(135deg,#ff6584,#6c63ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.g3{background:linear-gradient(135deg,#43e97b,#6c63ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px}
+.g2c{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.g3c{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-bottom:10px}
+.btn{border:none;border-radius:var(--rs);padding:10px 20px;font-weight:600;font-size:14px;cursor:pointer}.btn:disabled{opacity:.4;cursor:not-allowed}
+.bp{background:linear-gradient(135deg,#6c63ff,#5850e0);color:white}
+.bsm{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--text2);font-size:12px;cursor:pointer}
+.ba{background:rgba(67,233,123,.1);border:1px solid rgba(67,233,123,.3);color:#43e97b;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer}
+.bd{background:rgba(255,101,132,.1);border:1px solid rgba(255,101,132,.3);color:#ff6584;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer}
+.oc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.2rem;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:border .2s;margin-bottom:8px}
+.oc.sel{border-color:var(--accent);background:rgba(108,99,255,.05)}
+.chk{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;cursor:pointer}
+.chk.on{background:var(--accent);border-color:var(--accent)}
+.otitle{font-family:'Syne',sans-serif;font-weight:600;font-size:14px;margin-bottom:4px}
+.ometa{font-size:12px;color:var(--text2);display:flex;gap:10px;flex-wrap:wrap}
+.tdist{background:rgba(108,99,255,.15);color:var(--accent);font-size:10px;padding:2px 8px;border-radius:99px}
+.spin{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dp{background:var(--card);border:1px solid rgba(108,99,255,.4);border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;display:none}
+.dp.open{display:block}
+.sl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin:10px 0 4px}
+.vb{position:sticky;bottom:1rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.5rem;display:none;align-items:center;justify-content:space-between;margin-top:1rem}
+.vb.show{display:flex}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center}
+.sn{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800}
+.sl2{font-size:11px;color:var(--text2);margin-top:3px}
+table{width:100%;border-collapse:collapse}th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
+td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.lmo{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;font-size:13px;line-height:1.9;color:var(--text2);white-space:pre-wrap;margin-top:1rem}
+.cvd{border:2px dashed var(--border);border-radius:var(--r);padding:2rem;text-align:center;cursor:pointer;background:var(--bg2);transition:all .2s}
+.cvd:hover,.cvd.drag{border-color:var(--accent);background:rgba(108,99,255,.05)}
+.sk{background:rgba(108,99,255,.1);color:var(--accent);font-size:11px;padding:2px 8px;border-radius:99px;display:inline-block;margin:2px}
+.ab{background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.2);border-radius:var(--rs);padding:10px 16px;font-size:12px;color:var(--text2);margin-bottom:1rem;display:flex;align-items:center;gap:12px}
+.empty{text-align:center;padding:4rem;color:var(--text2);font-size:14px}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="logo">AlterFind</div>
+  <div class="tabs">
+    <button class="tab active" onclick="go('search')">🔍 Offres</button>
+    <button class="tab" onclick="go('lettre')">✉️ Lettre</button>
+    <button class="tab" onclick="go('suivi')">📋 Suivi</button>
+  </div>
+  <span id="cvb" style="display:none;font-size:11px;color:var(--accent3);background:rgba(67,233,123,.1);padding:3px 10px;border-radius:99px">✓ CV chargé</span>
+</nav>
+<div class="main">
+  <div class="ab">🔑 Clé Groq gratuite sur <a href="https://console.groq.com" target="_blank" style="color:var(--accent)">console.groq.com</a> : <input id="gk" placeholder="gsk_..." style="flex:1;font-size:12px" oninput="localStorage.setItem('af_k',this.value)"></div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">📄 Importe ton CV – auto-remplissage</div>
+    <div class="cvd" id="cvd" onclick="document.getElementById('cvf').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');hCV(event.dataTransfer.files[0])">
+      <input type="file" id="cvf" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="hCV(this.files[0])">
+      <div id="cvs"><p style="color:var(--text2);font-size:13px">📁 Glisse ton CV ici ou clique (PDF, PNG, JPG)</p></div>
+    </div>
+    <div id="cvsk" style="margin-top:8px"></div>
+    <div id="cve" style="color:var(--accent2);font-size:12px;margin-top:6px"></div>
+  </div>
+
+  <div class="page active" id="page-search">
+    <h1 class="h1">Trouve ton <span class="g1">alternance idéale</span></h1>
+    <div class="card">
+      <div class="g3c">
+        <div><label class="lbl">Mots-clés</label><input id="skw" placeholder="ex: management sport..." onkeydown="if(event.key==='Enter')doSearch()"></div>
+        <div><label class="lbl">Ville / Code postal</label><input id="sloc" placeholder="Paris, 95200..."></div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end"><button class="btn bp" onclick="doSearch()" id="sbtn" style="white-space:nowrap">Rechercher</button></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label class="lbl" style="margin:0;white-space:nowrap">Rayon :</label>
+        <select id="srad" style="width:auto;padding:4px 10px"><option value="10">10 km</option><option value="20">20 km</option><option value="35" selected>35 km</option><option value="50">50 km</option></select>
+      </div>
+    </div>
+    <div class="dp" id="dp">
+      <div id="dpt" style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:6px"></div>
+      <div id="dpc" style="color:var(--text2);font-size:13px;margin-bottom:12px"></div>
+      <div class="sl">Type</div><div id="dpty" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
+      <div class="sl">Missions</div><div id="dpd" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
+      <div class="sl">Profil</div><div id="dpp" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="ba" id="dpsb" onclick="sfd()">✓ Sélectionner</button>
+        <button class="bd" onclick="dfd()">✗ Décliner</button>
+        <button class="bsm" onclick="cdet()">← Fermer</button>
+      </div>
+    </div>
+    <div id="sld" style="display:none;text-align:center;padding:3rem;color:var(--text2)"><div class="spin"></div>Recherche en cours...</div>
+    <div id="olist"></div>
+    <div class="vb" id="vb"><span style="font-size:13px;color:var(--text2)"><strong id="seln" style="color:var(--text)">0</strong> offre(s) sélectionnée(s)</span><button class="btn bp" onclick="doValidate()">Valider et postuler →</button></div>
+  </div>
+
+  <div class="page" id="page-lettre">
+    <h1 class="h1">Génère ta <span class="g2">lettre de motivation</span></h1>
+    <p id="pfm" style="color:var(--accent3);font-size:13px;text-align:center;margin-bottom:1rem;display:none">✓ Formulaire pré-rempli depuis ton CV</p>
+    <div class="card">
+      <div class="lbl" style="color:var(--accent);margin-bottom:12px">TON PROFIL</div>
+      <div class="g2c">
+        <div><label class="lbl">Prénom Nom</label><input id="ln" placeholder="Badr Djeriouat"></div>
+        <div><label class="lbl">Adresse</label><input id="la" placeholder="2 Av du 8 mai 1945, Sarcelles"></div>
+        <div><label class="lbl">Email</label><input id="le" placeholder="email@gmail.com"></div>
+        <div><label class="lbl">Téléphone</label><input id="lp" placeholder="06 XX XX XX XX"></div>
+      </div>
+      <div style="margin-bottom:16px"><label class="lbl">Ton parcours</label><textarea id="lpa" rows="3" placeholder="Ex: TP Négociateur Commercial, téléprospection EL Energy..."></textarea></div>
+      <div class="lbl" style="color:var(--accent);margin-bottom:12px">L'OFFRE</div>
+      <div class="g2c" style="margin-bottom:12px">
+        <div><label class="lbl">Entreprise</label><input id="lco" placeholder="NRJ Audio"></div>
+        <div><label class="lbl">Poste</label><input id="lpo" placeholder="Alternant Communication & RP"></div>
+      </div>
+      <div style="margin-bottom:16px"><label class="lbl">Description de l'offre (optionnel)</label><textarea id="lof" rows="3" placeholder="Collez la description du poste ici..."></textarea></div>
+      <button class="btn bp" id="genb" onclick="genLM()" style="width:100%;font-size:15px;padding:12px">✦ Générer la lettre</button>
+    </div>
+    <div id="lmr" style="display:none">
+      <div class="lmo" id="lmt"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn bp" onclick="cpLM()">📋 Copier</button>
+        <button class="bsm" onclick="addFL()">+ Ajouter au suivi</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page-suivi">
+    <h1 class="h1">Suivi des <span class="g3">candidatures</span></h1>
+    <div class="sg" id="stg"></div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:.8rem"><button class="bsm" onclick="tAdd()">+ Ajouter</button></div>
+    <div class="card" id="adf" style="display:none">
+      <div class="g2c">
+        <div><label class="lbl">Entreprise</label><input id="fco"></div>
+        <div><label class="lbl">Poste</label><input id="fro"></div>
+        <div><label class="lbl">Type</label><select id="fty"><option value="alternance">Alternance</option><option value="cdd">CDD</option><option value="cdi">CDI</option><option value="stage">Stage</option></select></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn bp" onclick="addM()" style="padding:7px 16px;font-size:13px">Ajouter</button>
+        <button class="bsm" onclick="tAdd()">Annuler</button>
+      </div>
+    </div>
+    <div id="suivi-content"></div>
+  </div>
+</div>
+
+<script>
+var offers=[],sel=new Set(),dec=new Set(),cur=null
+var cands=JSON.parse(localStorage.getItem('af_c')||'[]')
+var $=function(id){return document.getElementById(id)}
+
+window.onload=function(){
+  var k=localStorage.getItem('af_k');if(k)$('gk').value=k
+  renderSuivi()
+}
+
+function go(p){
+  document.querySelectorAll('.page').forEach(function(e){e.classList.remove('active')})
+  document.querySelectorAll('.tab').forEach(function(e){e.classList.remove('active')})
+  $('page-'+p).classList.add('active')
+  var idx=['search','lettre','suivi'].indexOf(p)
+  document.querySelectorAll('.tab')[idx].classList.add('active')
+  if(p==='suivi')renderSuivi()
+}
+
+function fb64(file){
+  return new Promise(function(res,rej){
+    var r=new FileReader()
+    r.onload=function(){res(r.result.split(',')[1])}
+    r.onerror=function(){rej(new Error('Lecture échouée'))}
+    r.readAsDataURL(file)
+  })
+}
+
+async function hCV(file){
+  if(!file)return
+  var key=$('gk').value.trim()
+  if(!key){$('cve').textContent='⚠️ Entre ta clé Groq pour analyser le CV';return}
+  $('cvs').innerHTML='<p style="color:var(--text2)">⏳ Analyse en cours...</p>'
+  $('cve').textContent=''
+  try{
+    var b64=await fb64(file)
+    var mime=file.type||'image/jpeg'
+    var prompt='Extrais les infos de ce CV. Retourne UNIQUEMENT un JSON valide sans markdown: {"name":"","email":"","phone":"","address":"","skills":[],"searchKeywords":"mots-cles emploi","parcours":"Resume 2-3 phrases pour lettre motivation"}'
+    var res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:'meta-llama/llama-4-scout-17b-16e-instruct',messages:[{role:'user',content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:'data:'+mime+';base64,'+b64}}]}],max_tokens:600,temperature:0.1})
+    })
+    var data=await res.json()
+    if(!res.ok)throw new Error(data.error&&data.error.message||'Erreur Groq')
+    var txt=data.choices[0].message.content.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim()
+    var p=JSON.parse(txt)
+    $('cvs').innerHTML='<p style="color:var(--accent3)">✅ CV analysé – '+(p.name||'')+'</p>'
+    $('cvb').style.display='block';$('pfm').style.display='block'
+    if(p.name)$('ln').value=p.name
+    if(p.address)$('la').value=p.address
+    if(p.email)$('le').value=p.email
+    if(p.phone)$('lp').value=p.phone
+    if(p.parcours)$('lpa').value=p.parcours
+    if(p.searchKeywords)$('skw').value=p.searchKeywords
+    if(p.address){var m=p.address.match(/\d{5}/);if(m)$('sloc').value=m[0]}
+    if(p.skills&&p.skills.length)$('cvsk').innerHTML=p.skills.map(function(s){return'<span class="sk">'+s+'</span>'}).join('')
+  }catch(e){
+    $('cvs').innerHTML='<p style="color:var(--text2)">📁 Glisse ton CV ici ou clique</p>'
+    $('cve').textContent='⚠️ '+e.message
+  }
+}
+
+function getDemos(kw,loc){
+  return[
+    {id:'d1',title:'Alternance – '+(kw||'Commercial')+' Junior',company:'SportCo',location:loc||'Paris 75',dist:12,url:'#',type:'Alternance · Bac+3 · Démarrage sept. 2026',desc:'Prospection BtoB, gestion portefeuille clients, CRM, participation aux événements.',profil:'Bac+3 commerce. Dynamique, autonome, sens commercial.'},
+    {id:'d2',title:'Chargé de projet Événementiel Sport',company:'EventGroup',location:loc||'Boulogne 92',dist:18,url:'#',type:'Alternance · 1 100€/mois · Démarrage sept. 2026',desc:'Organisation événements sportifs, gestion prestataires, communication, budget.',profil:'Bac+3 marketing/comm. Rigoureux, organisé.'},
+    {id:'d3',title:'Business Developer – Secteur Sport',company:'SportStart',location:loc||'Saint-Denis 93',dist:8,url:'#',type:'Alternance · Commission incluse',desc:'Développement réseau partenaires, pitch commercial, CRM Salesforce.',profil:'Bac+3. Pugnace, goût du challenge, affinité sport.'},
+    {id:'d4',title:'Assistant marketing digital',company:'FitBrand',location:loc||'Argenteuil 95',dist:10,url:'#',type:'Alternance · Tickets resto + transport',desc:'Réseaux sociaux, community management, création de contenu, reporting.',profil:'Bac+3. Créatif, maîtrise outils digitaux.'},
+    {id:'d5',title:'Alternant communication digitale',company:'MediaSport',location:loc||'Cergy 95',dist:22,url:'#',type:'Alternance 12 mois · Démarrage sept. 2026',desc:'Vidéos, newsletters, organisation événements, community management.',profil:'Bac+3. Canva, CapCut, Pack Office.'},
+  ]
+}
+
+function doSearch(){
+  var kw=$('skw').value.trim();if(!kw)return
+  $('sld').style.display='block';$('olist').innerHTML='';$('dp').classList.remove('open')
+  $('sbtn').disabled=true;sel.clear();dec.clear();updVB()
+  offers=getDemos(kw,$('sloc').value)
+  $('sld').style.display='none';$('sbtn').disabled=false
+  renderOffers()
+}
+
+function renderOffers(){
+  var list=$('olist'),vis=offers.filter(function(o){return!dec.has(o.id)})
+  if(!vis.length){list.innerHTML='<div class="empty">Aucune offre. Modifie tes critères.</div>';return}
+  list.innerHTML=vis.map(function(o){
+    var s=sel.has(o.id)
+    return '<div class="oc'+(s?' sel':'')+'" id="oc-'+o.id+'" onclick="odet(\''+o.id+'\')">'
+      +'<div class="chk'+(s?' on':'')+'" onclick="event.stopPropagation();tSel(\''+o.id+'\')">'+(s?'<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="2,5 4,8 8,2" stroke="white" stroke-width="2" fill="none"/></svg>':'')+'</div>'
+      +'<div style="flex:1"><div class="otitle">'+o.title+'</div><div class="ometa"><span>🏢 '+o.company+'</span><span>📍 '+o.location+'</span><span class="tdist">'+o.dist+'km</span></div></div>'
+      +'<button onclick="event.stopPropagation();dOff(\''+o.id+'\')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:0 4px">✗</button>'
+      +'</div>'
+  }).join('')
+}
+
+function tSel(id){sel.has(id)?sel.delete(id):sel.add(id);renderOffers();updVB()}
+function dOff(id){dec.add(id);if(cur&&cur.id===id)cdet();renderOffers();updVB()}
+function updVB(){var b=$('vb');b.className='vb'+(sel.size>0?' show':'');$('seln').textContent=sel.size}
+
+function odet(id){
+  var o=null;for(var i=0;i<offers.length;i++){if(offers[i].id===id){o=offers[i];break}}
+  if(!o)return;cur=o
+  $('dpt').textContent=o.title;$('dpc').textContent=o.company+' · '+o.location+' · '+o.dist+'km'
+  $('dpty').textContent=o.type;$('dpd').textContent=o.desc;$('dpp').textContent=o.profil
+  $('dpsb').textContent=sel.has(id)?'✗ Désélectionner':'✓ Sélectionner'
+  $('dp').classList.add('open');$('dp').scrollIntoView({behavior:'smooth',block:'start'})
+}
+function sfd(){if(cur){tSel(cur.id);odet(cur.id)}}
+function dfd(){if(cur){dOff(cur.id);cdet()}}
+function cdet(){$('dp').classList.remove('open');cur=null}
+
+function doValidate(){
+  var s=offers.filter(function(o){return sel.has(o.id)})
+  s.forEach(function(o){if(o.url!=='#')window.open(o.url,'_blank');addCand(o.company,o.title)})
+  alert(s.length+' offre(s) ouvertes et ajoutées au suivi !');sel.clear();updVB();renderOffers()
+}
+
+async function genLM(){
+  var co=$('lco').value.trim(),po=$('lpo').value.trim();if(!co||!po)return
+  var key=$('gk').value.trim();if(!key){alert('Entre ta clé Groq pour générer la lettre !');return}
+  var btn=$('genb');btn.disabled=true;btn.textContent='⏳ Génération...'
+  $('lmr').style.display='none'
+  var prompt='Rédige une lettre de motivation professionnelle en français pour '+($('ln').value||'le candidat')+' qui postule au poste de '+po+' chez '+co+'.\nAdresse : '+$('la').value+'\nEmail : '+$('le').value+'\nTéléphone : '+$('lp').value+'\nParcours : '+($('lpa').value||'étudiant en recherche d\'alternance')+'\nDescription du poste : '+($('lof').value||'non fournie')+'\nRédige la lettre complète avec en-tête, 3-4 paragraphes et formule de politesse. Pas de crochets ni placeholders.'
+  try{
+    var res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:prompt}],max_tokens:1200})
+    })
+    var data=await res.json()
+    if(!res.ok)throw new Error(data.error&&data.error.message||'Erreur Groq')
+    $('lmt').textContent=data.choices[0].message.content
+  }catch(e){$('lmt').textContent='Erreur : '+e.message}
+  $('lmr').style.display='block';btn.disabled=false;btn.textContent='✦ Générer la lettre'
+}
+function cpLM(){navigator.clipboard.writeText($('lmt').textContent).then(function(){alert('Copié !')})}
+function addFL(){addCand($('lco').value,$('lpo').value);go('suivi')}
+
+function saveC(){localStorage.setItem('af_c',JSON.stringify(cands))}
+function addCand(co,ro,ty){
+  ty=ty||'alternance'
+  cands.unshift({id:Date.now().toString(),company:co,role:ro.substring(0,60),type:ty,date:new Date().toLocaleDateString('fr-FR'),status:'Envoyée',response:''})
+  saveC();renderSuivi()
+}
+function tAdd(){var f=$('adf');f.style.display=f.style.display==='none'?'block':'none'}
+function addM(){var c=$('fco').value.trim();if(!c)return;addCand(c,$('fro').value,$('fty').value);$('fco').value='';$('fro').value='';tAdd()}
+function updC(id,f,v){cands=cands.map(function(c){return c.id===id?Object.assign({},c,Object.fromEntries([[f,v]])):c});saveC();if(f==='status')renderStats()}
+function delC(id){cands=cands.filter(function(c){return c.id!==id});saveC();renderSuivi()}
+
+var SC={'Envoyée':'#6c63ff','En attente':'#ffc800','Entretien':'#43e97b','Acceptée':'#43e97b','Refusée':'#ff6584'}
+var SS=['Envoyée','En attente','Entretien','Acceptée','Refusée']
+
+function renderStats(){
+  var t=cands.length,w=cands.filter(function(c){return['Envoyée','En attente','Entretien'].includes(c.status)}).length
+  var y=cands.filter(function(c){return c.status==='Acceptée'}).length,n=cands.filter(function(c){return c.status==='Refusée'}).length
+  $('stg').innerHTML=[{v:t,l:'Total',c:'#f0f0f8'},{v:w,l:'En cours',c:'#6c63ff'},{v:y,l:'Acceptées',c:'#43e97b'},{v:n,l:'Refus',c:'#ff6584'}]
+    .map(function(x){return'<div class="sc"><div class="sn" style="color:'+x.c+'">'+x.v+'</div><div class="sl2">'+x.l+'</div></div>'}).join('')
+}
+
+function renderSuivi(){
+  renderStats()
+  var el=$('suivi-content')
+  if(!cands.length){el.innerHTML='<div class="empty">Aucune candidature. Commence par rechercher des offres !</div>';return}
+  el.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Entreprise</th><th>Type</th><th>Date</th><th>Statut</th><th>Note</th><th></th></tr></thead><tbody>'
+    +cands.map(function(c){
+      return'<tr><td><div style="font-weight:500">'+c.company+'</div><div style="font-size:11px;color:var(--text2)">'+c.role+'</div></td>'
+        +'<td style="font-size:11px;color:var(--text2)">'+c.type+'</td>'
+        +'<td style="font-size:11px;color:var(--text2)">'+c.date+'</td>'
+        +'<td><select onchange="updC(\''+c.id+'\',\'status\',this.value)" style="font-size:11px;padding:3px 6px;border-radius:6px;background:var(--bg2);border:1px solid var(--border);color:'+(SC[c.status]||'var(--text)')+'">'+SS.map(function(s){return'<option value="'+s+'"'+(s===c.status?' selected':'')+'>'+s+'</option>'}).join('')+'</select></td>'
+        +'<td><input value="'+(c.response||'')+'" onchange="updC(\''+c.id+'\',\'response\',this.value)" placeholder="Note..." style="font-size:11px;padding:4px 8px;width:100%"></td>'
+        +'<td><button onclick="delC(\''+c.id+'\')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px">×</button></td></tr>'
+    }).join('')+'</tbody></table></div>'
+}
+</script>
+</body>
+</html>
