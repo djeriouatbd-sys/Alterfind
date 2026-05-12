@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{--bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--border:rgba(255,255,255,0.07);--accent:#6c63ff;--accent2:#ff6584;--accent3:#43e97b;--text:#f0f0f8;--text2:#8888aa;--card:#13131e;--r:12px;--rs:8px}
 *{box-sizing:border-box;margin:0;padding:0}html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
@@ -204,7 +205,8 @@ td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-al
         <div class="lmo" id="lmt"></div>
         <div style="display:flex;gap:8px;margin-top:10px">
           <button class="btn bp" onclick="cpLM()">📋 Copier</button>
-          <button class="btn bp" onclick="dlLM()" style="background:linear-gradient(135deg,#43e97b,#0F6E56)">⬇️ Télécharger</button>
+          <button class="btn bp" onclick="dlPDF()" style="background:linear-gradient(135deg,#43e97b,#0F6E56)">⬇️ Télécharger PDF</button>
+          <button class="btn bp" id="btn-postuler" onclick="openOfferLink()" style="background:linear-gradient(135deg,#ff6584,#c0392b);display:none">🔗 Postuler</button>
           <button class="bsm" onclick="addFL()">+ Ajouter au suivi</button>
         </div>
       </div>
@@ -530,11 +532,17 @@ async function doValidate(){
   $('lco').value=first.company
   $('lpo').value=first.title
   $('lof').value='Missions : '+first.desc+'\nProfil : '+first.profil
+  // Sauvegarder l'URL pour le bouton postuler
+  currentOfferUrl = first.url || ''
   // Générer la lettre auto si clé présente
   var key=$('gk').value.trim()
   go('lettre')
   if(key){
     await genLM()
+  }
+  // Afficher bouton postuler si URL disponible
+  if(currentOfferUrl && currentOfferUrl!=='#'){
+    $('btn-postuler').style.display='inline-flex'
   }
   sel.clear();updVB();renderOffers()
 }
@@ -558,14 +566,27 @@ async function genLM(){
   $('lmr').style.display='block';btn.disabled=false;btn.textContent='✦ Générer la lettre'
 }
 function cpLM(){navigator.clipboard.writeText($('lmt').textContent).then(function(){alert('Copié !')})}
-function dlLM(){
+var currentOfferUrl = ''
+
+function dlPDF(){
   var txt=$('lmt').textContent
   if(!txt) return
-  var blob=new Blob([txt],{type:'text/plain;charset=utf-8'})
-  var a=document.createElement('a')
-  a.href=URL.createObjectURL(blob)
-  a.download='Lettre_Motivation_'+($('lco').value||'offre').replace(/\s+/g,'_')+'.txt'
-  a.click()
+  var doc=new jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'})
+  var margin=20, lineH=7, maxW=170, y=margin
+  var lines=doc.splitTextToSize(txt, maxW)
+  lines.forEach(function(line){
+    if(y>270){doc.addPage();y=margin}
+    doc.setFontSize(11)
+    doc.setFont('helvetica','normal')
+    doc.text(line, margin, y)
+    y+=lineH
+  })
+  var fname='Lettre_Motivation_'+($('lco').value||'offre').replace(/[^a-zA-Z0-9]/g,'_')+'.pdf'
+  doc.save(fname)
+}
+
+function openOfferLink(){
+  if(currentOfferUrl && currentOfferUrl!=='#') window.open(currentOfferUrl,'_blank')
 }
 function addFL(){addCand($('lco').value,$('lpo').value);go('suivi')}
 
