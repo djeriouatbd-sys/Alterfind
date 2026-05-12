@@ -253,14 +253,17 @@ var $=function(id){return document.getElementById(id)}
 window.onload = async function(){
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
   
+  // Gérer le retour OAuth (hash dans l'URL)
   const {data:{session}} = await sb.auth.getSession()
   if(session){
     currentUser = session.user
     showApp()
+  } else {
+    showAuth()
   }
 
   sb.auth.onAuthStateChange(function(event, session){
-    if(event === 'SIGNED_IN' && session){
+    if((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session){
       currentUser = session.user
       showApp()
     } else if(event === 'SIGNED_OUT'){
