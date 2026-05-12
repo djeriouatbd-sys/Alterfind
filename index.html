@@ -153,15 +153,7 @@ td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-al
         </div>
         <span class="key-saved" id="key-saved">✓ Sauvegardée</span>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
-        <span style="font-size:12px;color:var(--text2);white-space:nowrap">🏢 France Travail (<a href="https://francetravail.io" target="_blank" style="color:var(--accent)">francetravail.io</a>) :</span>
-        <div class="key-row" style="flex:1;margin:0">
-          <input type="text" id="ft-id" placeholder="Client ID..." oninput="saveFTKey()" style="font-size:12px">
-        </div>
-        <div class="key-row" style="flex:1;margin:0">
-          <input type="password" id="ft-secret" placeholder="Client Secret..." oninput="saveFTKey()" style="font-size:12px">
-        </div>
-        <span class="key-saved" id="ft-saved">✓ Sauvegardée</span>
+      <span class="key-saved" id="ft-saved" style="display:none">✓</span
       </div>
     </div>
 
@@ -361,18 +353,23 @@ function saveFTKey(){
   setTimeout(function(){el.style.display='none'},2000)
 }
 
+var FT_ID = 'PAR_alterfind2_18b1396f135ae37888714e3fe5203d0c2cc79cf365afff89e06e9fbe4d157fec'
+var FT_SECRET = '030384aa1c4542a3b5a12bdca2649e6e635265f9728dfad82954f1f474a8b17e'
+var _ftToken = null
+var _ftTokenExp = 0
+
 async function getFTToken(){
-  var id=($('ft-id')?$('ft-id').value.trim():'')||localStorage.getItem('af_ft_id')||''
-  var secret=($('ft-secret')?$('ft-secret').value.trim():'')||localStorage.getItem('af_ft_secret')||''
-  if(!id||!secret) return null
+  if(_ftToken && Date.now() < _ftTokenExp) return _ftToken
   try{
     var res = await fetch('https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=%2Fpartenaire', {
       method:'POST',
       headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:'grant_type=client_credentials&client_id='+encodeURIComponent(id)+'&client_secret='+encodeURIComponent(secret)+'&scope=api_offresdemploiv2+o2dsoffre'
+      body:'grant_type=client_credentials&client_id='+encodeURIComponent(FT_ID)+'&client_secret='+encodeURIComponent(FT_SECRET)+'&scope=api_offresdemploiv2+o2dsoffre'
     })
     var data = await res.json()
-    return data.access_token || null
+    _ftToken = data.access_token || null
+    _ftTokenExp = Date.now() + (data.expires_in || 1200) * 1000 - 30000
+    return _ftToken
   }catch(e){ return null }
 }
 
@@ -460,10 +457,7 @@ function showApp(){
   if(currentUser) $('user-email').textContent = currentUser.email
   var k = localStorage.getItem('af_k')
   if(k){ $('gk').value = k; showKeySaved() }
-  var ftId = localStorage.getItem('af_ft_id')
-  var ftSecret = localStorage.getItem('af_ft_secret')
-  if(ftId && $('ft-id')) $('ft-id').value = ftId
-  if(ftSecret && $('ft-secret')) $('ft-secret').value = ftSecret
+
   loadCands()
   renderSuivi()
   // Charger les CVs sauvegardés
@@ -676,13 +670,22 @@ async function doSearch(){
   var ftOffers = await searchFTOffers(kw, $('sloc').value)
   if(ftOffers && ftOffers.length > 0){
     offers = ftOffers.map(function(o, i){
-      return {
+      // Construire la meilleure URL possible vers l'offre
+        var offerUrl = '#'
+        if(o.origineOffre && o.origineOffre.urlOrigine && o.origineOffre.urlOrigine !== 'https://candidat.francetravail.fr') {
+          offerUrl = o.origineOffre.urlOrigine
+        } else if(o.contact && o.contact.urlPostulation) {
+          offerUrl = o.contact.urlPostulation
+        } else if(o.id) {
+          offerUrl = 'https://candidat.francetravail.fr/offres/recherche/detail/' + o.id
+        }
+        return {
         id: o.id || ('ft'+i),
         title: o.intitule || 'Poste',
         company: (o.entreprise && o.entreprise.nom) || 'Entreprise',
         location: (o.lieuTravail && o.lieuTravail.libelle) || '',
         dist: 0,
-        url: o.origineOffre && o.origineOffre.urlOrigine ? o.origineOffre.urlOrigine : (o.contact && o.contact.urlPostulation ? o.contact.urlPostulation : '#'),
+        url: offerUrl,
         type: [o.typeContratLibelle, o.salaire && o.salaire.libelle].filter(Boolean).join(' · '),
         desc: o.description ? o.description.substring(0,300)+'...' : '',
         profil: o.formations ? o.formations.map(function(f){return f.commentaire}).join(', ') : ''
