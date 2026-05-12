@@ -356,30 +356,28 @@ async function getFTToken(){
       body:'grant_type=client_credentials&client_id='+encodeURIComponent(FT_ID)+'&client_secret='+encodeURIComponent(FT_SECRET)+'&scope=api_offresdemploiv2+o2dsoffre'
     })
     var data = await res.json()
+    console.log('FT token response:', data)
     _ftToken = data.access_token || null
     _ftTokenExp = Date.now() + (data.expires_in || 1200) * 1000 - 30000
     return _ftToken
-  }catch(e){ return null }
+  }catch(e){ console.error('FT token error:', e); return null }
 }
 
 async function searchFTOffers(kw, loc){
   var token = await getFTToken()
+  console.log('FT token:', token ? 'OK' : 'FAILED')
   if(!token) return null
   try{
-    var params = new URLSearchParams({
-      motsCles: kw,
-      typeContrat: 'E2', // Alternance
-      range: '0-14',
-      sort: 1
-    })
-    if(loc) params.set('commune', loc)
+    var params = new URLSearchParams({motsCles: kw, range: '0-9', sort: 1})
     var res = await fetch('https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search?'+params, {
       headers:{'Authorization':'Bearer '+token,'Accept':'application/json'}
     })
-    if(!res.ok) return null
+    console.log('FT search status:', res.status)
+    if(!res.ok){ console.error('FT error:', await res.text()); return null }
     var data = await res.json()
+    console.log('FT results:', data.resultats ? data.resultats.length : 0)
     return data.resultats || null
-  }catch(e){ return null }
+  }catch(e){ console.error('FT exception:', e); return null }
 }
 
 var authMode = 'login'
@@ -663,13 +661,11 @@ async function doSearch(){
   if(ftOffers && ftOffers.length > 0){
     offers = ftOffers.map(function(o, i){
       // Construire la meilleure URL possible vers l'offre
-        var offerUrl = '#'
-        if(o.origineOffre && o.origineOffre.urlOrigine && o.origineOffre.urlOrigine !== 'https://candidat.francetravail.fr') {
+        var offerUrl = o.id ? 'https://candidat.francetravail.fr/offres/recherche/detail/' + o.id : '#'
+        if(o.origineOffre && o.origineOffre.urlOrigine && !o.origineOffre.urlOrigine.includes('francetravail.fr/offres/recherche?')) {
           offerUrl = o.origineOffre.urlOrigine
         } else if(o.contact && o.contact.urlPostulation) {
           offerUrl = o.contact.urlPostulation
-        } else if(o.id) {
-          offerUrl = 'https://candidat.francetravail.fr/offres/recherche/detail/' + o.id
         }
         return {
         id: o.id || ('ft'+i),
