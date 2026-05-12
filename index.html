@@ -82,11 +82,10 @@ td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-al
   <div class="auth-box">
     <div class="auth-logo">AlterFind</div>
     <div class="auth-sub">Trouve ton alternance idéale</div>
-    <div class="auth-input">
-      <label class="lbl">Adresse email</label>
-      <input type="email" id="auth-email" placeholder="ton@email.com" onkeydown="if(event.key==='Enter')sendMagicLink()">
-    </div>
-    <button class="btn bp" onclick="sendMagicLink()" id="auth-btn" style="width:100%">✉️ Recevoir le lien de connexion</button>
+    <button class="btn bp" onclick="signInGoogle()" id="auth-btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 20px">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFF" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>
+      Continuer avec Google
+    </button>
     <div id="auth-msg" class="auth-msg" style="display:none"></div>
   </div>
 </div>
@@ -270,21 +269,12 @@ window.onload = async function(){
   })
 }
 
-async function sendMagicLink(){
-  var email = $('auth-email').value.trim()
-  if(!email){ showMsg('Entre ton adresse email', 'err'); return }
-  var btn = $('auth-btn')
-  btn.disabled = true; btn.textContent = '⏳ Envoi...'
-  var {error} = await sb.auth.signInWithOtp({
-    email: email,
-    options: { emailRedirectTo: window.location.href }
+async function signInGoogle(){
+  var {error} = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
   })
-  if(error){
-    showMsg('Erreur : ' + error.message, 'err')
-  } else {
-    showMsg('✅ Lien envoyé ! Vérifie ta boîte mail et clique sur le lien.', 'ok')
-  }
-  btn.disabled = false; btn.textContent = '✉️ Recevoir le lien de connexion'
+  if(error) showMsg('Erreur : ' + error.message, 'err')
 }
 
 function showMsg(txt, type){
@@ -471,14 +461,40 @@ function fb64(file){
 }
 
 // ── SEARCH ──
+var _lastOfferIds=[]
+
 function getDemos(kw,loc){
-  return[
-    {id:'d1',title:'Alternance – '+(kw||'Commercial')+' Junior',company:'SportCo',location:loc||'Paris 75',dist:12,url:'#',type:'Alternance · Bac+3 · Démarrage sept. 2026',desc:'Prospection BtoB, gestion portefeuille clients, CRM, participation aux événements.',profil:'Bac+3 commerce. Dynamique, autonome, sens commercial.'},
-    {id:'d2',title:'Chargé de projet Événementiel Sport',company:'EventGroup',location:loc||'Boulogne 92',dist:18,url:'#',type:'Alternance · 1 100€/mois · Démarrage sept. 2026',desc:'Organisation événements sportifs, gestion prestataires, communication, budget.',profil:'Bac+3 marketing/comm. Rigoureux, organisé.'},
-    {id:'d3',title:'Business Developer – Secteur Sport',company:'SportStart',location:loc||'Saint-Denis 93',dist:8,url:'#',type:'Alternance · Commission incluse',desc:'Développement réseau partenaires, pitch commercial, CRM Salesforce.',profil:'Bac+3. Pugnace, goût du challenge, affinité sport.'},
-    {id:'d4',title:'Assistant marketing digital',company:'FitBrand',location:loc||'Argenteuil 95',dist:10,url:'#',type:'Alternance · Tickets resto + transport',desc:'Réseaux sociaux, community management, création de contenu, reporting.',profil:'Bac+3. Créatif, maîtrise outils digitaux.'},
-    {id:'d5',title:'Alternant communication digitale',company:'MediaSport',location:loc||'Cergy 95',dist:22,url:'#',type:'Alternance 12 mois · Démarrage sept. 2026',desc:'Vidéos, newsletters, organisation événements, community management.',profil:'Bac+3. Canva, CapCut, Pack Office.'},
+  var all=[
+    {id:'d1',title:'Chargé de développement commercial',company:'Central Fit',location:loc||'Charenton 94',dist:25,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance · 774€-1801€/mois · Démarrage sept. 2026',desc:'Accueil et vente abonnements, relances téléphoniques, CRM, fidélisation membres, community management, création de contenu. Club de sport premium.',profil:'Bac+3 commerce/sport business. Sens relationnel, affinité sport/fitness, goût challenges commerciaux.'},
+    {id:'d2',title:'Assistant chef de projet événementiel',company:"Com'Over",location:loc||'Paris 11e',dist:20,url:'https://candidat.francetravail.fr/offres/recherche',type:"Alternance 1 an · 1 100€-1 850€/mois · Démarrage sept. 2026",desc:'Suivi opérationnel événements (sport, lifestyle) en France et international. Recherche prestataires, élaboration devis, négociation, reporting. Agence élue agence de l\'année 2024.',profil:'Bac+3/4. Autonome, rigoureux, bon niveau anglais. Maîtrise Pack Office.'},
+    {id:'d3',title:'Account Manager QVT sport & bien-être',company:'ESG Sport',location:loc||'Paris 75',dist:20,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance · Bac+3 · Démarrage sept./oct. 2026',desc:'Prospection commerciale (cold call, cold emailing), gestion CRM, planification ateliers bien-être en entreprise, suivi clients. Secteur QVT / sport santé.',profil:'Commercial dans l\'âme, bonne communication orale. Organisation, autonomie. Bac+2 requis.'},
+    {id:'d4',title:'Chargé de communication digitale',company:'ILEPS',location:loc||'Cergy 95',dist:22,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance · À partir de 20 000€/an · Démarrage sept. 2026',desc:'Réseaux sociaux, création contenus (visuels, vidéos, newsletters), community management, organisation d\'événements (JPO, remise de diplômes). École de sport à Cergy.',profil:'Bac+3 validé. Maîtrise Canva, Pack Office, CapCut. Créatif, autonome.'},
+    {id:'d5',title:'Assistant grands comptes MICE',company:'Sodexo Live!',location:loc||'Boulogne 92',dist:25,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance 12 mois · Démarrage sept. 2026 · Transport + tickets resto',desc:'Prospection commerciale, prise de RDV, rédaction offres clients, CRM Salesforce, coordination marketing. Événements prestige (Roland-Garros, Tour de France, Tour Eiffel).',profil:'Anglais courant requis. Autonome, dynamique, sens de la négociation.'},
+    {id:'d6',title:'Business Developer Junior',company:'Biomen',location:loc||'Levallois 92',dist:22,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance · Temps plein · Démarrage sept. 2026',desc:'Prospection BtoB, qualification leads, démonstrations produits, suivi commercial, CRM. Startup santé/bien-être innovante en forte croissance.',profil:'Bac+3 min. Autonome, pugnace, esprit startup. Affinité bien-être/santé appréciée.'},
+    {id:'d7',title:'Alternant communication & relations publiques',company:'NRJ Audio',location:loc||'Paris 16e',dist:22,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance 12 ou 24 mois · Démarrage sept. 2026 · Sport + transport 60%',desc:'Organisation déploiement événements clients/partenaires, gestion prestataires, coordination équipes internes, supervision terrain, suivi budgétaire. Groupe NRJ.',profil:'Bac+3 à Bac+5 marketing/comm/événementiel. Maîtrise Pack Office, Canva. Excellent relationnel.'},
+    {id:'d8',title:'Adjoint responsable de rayon sport',company:'Galileo / ESG Sport',location:loc||'Paris 75',dist:20,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance · Bac+2/3 · Démarrage sept./oct. 2026 · Aucun frais formation',desc:'Gestion commerciale d\'un rayon sport (stocks, gamme, ventes), management d\'équipe, recrutement, formation coéquipiers. Environnement retail sport.',profil:'Bac+2/3 commerce ou management. Passion du sport, leadership, sens commercial.'},
+    {id:'d9',title:'Chargé de développement commercial outdoor',company:'AYAQ',location:loc||'Issy-les-Moulineaux 92',dist:28,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance 12 mois · À partir de 1 000€/mois · Démarrage sept. 2026',desc:'Développement portefeuille revendeurs, animation commerciale, merchandising, participation événements et salons, CRM, suivi KPIs. Marque sport outdoor premium.',profil:'Bac+3 min, marketing/vente. Permis B requis, anglais, affinité sports outdoor.'},
+    {id:'d10',title:'Assistant responsable commercial MICE',company:'Best Western',location:loc||'Colombes 92',dist:22,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance 24 mois · Mutuelle 94% + RTT + intéressement',desc:'Développement CA séminaires (30 hôtels France), prospection comptes, gestion cycle vente complet (qualification → closing), CRM Salesforce, participation salons.',profil:'Bac+3 à +5 commerce/hôtellerie. Aisance relationnelle, négociation, anglais opérationnel.'},
+    {id:'d11',title:'Assistant événementiel projet sportif',company:'MBA ESG',location:loc||'Paris 75',dist:20,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance 1 an · Démarrage sept./oct. 2026 · Aucun frais formation',desc:'Organisation d\'événements sportifs de A à Z : gestion budgétaire, recrutement bénévoles, démarchage sponsors, suivi réseaux sociaux, développement carrière athlètes.',profil:'Bac+4 marketing/comm/commerce. Passionné de sport, capacités organisationnelles.'},
+    {id:'d12',title:'Chargé de projet Stock Management',company:'Veepee',location:loc||'Saint-Denis 93',dist:8,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance · Démarrage sept. 2026 · Très proche de Sarcelles',desc:'Coordination et suivi des stocks produits partenaires, analyse de données, reporting, interface entre équipes achat/logistique/commercial. Leader de la vente événementielle.',profil:'Bac+3 min. Rigoureux, analytique, Pack Office. Goût pour le commerce et les chiffres.'},
+    {id:'d13',title:'Business Developer – ISCOD',company:'ISCOD / Entreprise partenaire',location:loc||'Paris 75',dist:20,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance · Rémunération selon âge · Démarrage sept. 2026',desc:'Prospection BtoB, développement portefeuille clients, pitch commercial, suivi CRM, participation à des événements professionnels. Formation école digitale intégrée.',profil:'Bac+2/3. Dynamique, sens commercial, goût du challenge. Aucun frais de formation.'},
+    {id:'d14',title:'Assistant communication Soli\'run',company:'Habitat et Humanisme IDF',location:loc||'La Défense 92',dist:25,url:'https://candidat.francetravail.fr/offres/recherche',type:'Apprentissage · À partir de 972€/mois · Tickets resto + Navigo 75% + salle de sport',desc:'Communication de la course solidaire Soli\'run : réseaux sociaux, community management, création graphique (Canva), vidéos, partenariats influenceurs, organisation événements.',profil:'Bac+3 min. Maîtrise Canva, réseaux sociaux. Créatif, autonome. Mission solidaire + sport.'},
+    {id:'d15',title:'Account Manager Séminaires',company:'Best Western Hotels',location:loc||'Colombes 92',dist:22,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance 24 mois · Mutuelle 94% + RTT',desc:'Développement CA séminaires sur réseau 30 hôtels France, prospection comptes à potentiel, gestion cycle de vente complet, CRM Salesforce.',profil:'Bac+3 à +5 commerce. Aisance relationnelle, négociation, Pack Office, anglais opérationnel.'},
   ]
+  // Filtrer par mots-clés si pertinent
+  var kl=kw.toLowerCase()
+  var filtered=all.filter(function(o){
+    return o.title.toLowerCase().includes(kl)||o.desc.toLowerCase().includes(kl)||o.profil.toLowerCase().includes(kl)||o.company.toLowerCase().includes(kl)
+  })
+  var pool=filtered.length>=3?filtered:all
+  // Mélanger et exclure les derniers affichés
+  var available=pool.filter(function(o){return!_lastOfferIds.includes(o.id)})
+  if(available.length<5) available=pool.slice() // reset si plus assez
+  // Mélanger aléatoirement
+  available.sort(function(){return Math.random()-.5})
+  var result=available.slice(0,5)
+  _lastOfferIds=result.map(function(o){return o.id})
+  return result
 }
 
 function doSearch(){
