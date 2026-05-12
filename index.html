@@ -3,13 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AlterFind</title>
+<title>AlterFind – Trouve ton alternance</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 :root{--bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--border:rgba(255,255,255,0.07);--accent:#6c63ff;--accent2:#ff6584;--accent3:#43e97b;--text:#f0f0f8;--text2:#8888aa;--card:#13131e;--r:12px;--rs:8px}
 *{box-sizing:border-box;margin:0;padding:0}html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
 input,select,textarea,button{font-family:'DM Sans',sans-serif;outline:none}
-input,select,textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 14px;color:var(--text);font-size:13px;transition:border .2s}
+input[type=text],input[type=email],input[type=password],select,textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 14px;color:var(--text);font-size:13px;transition:border .2s}
 input:focus,select:focus,textarea:focus{border-color:var(--accent)}textarea{resize:vertical}
 .nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,10,15,.93);backdrop-filter:blur(12px);z-index:100}
 .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;background:linear-gradient(135deg,#6c63ff,#ff6584);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -26,7 +28,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}textarea{resi
 .lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px}
 .g2c{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 .g3c{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-bottom:10px}
-.btn{border:none;border-radius:var(--rs);padding:10px 20px;font-weight:600;font-size:14px;cursor:pointer}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn{border:none;border-radius:var(--rs);padding:10px 20px;font-weight:600;font-size:14px;cursor:pointer;transition:opacity .2s}.btn:disabled{opacity:.4;cursor:not-allowed}
 .bp{background:linear-gradient(135deg,#6c63ff,#5850e0);color:white}
 .bsm{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--text2);font-size:12px;cursor:pointer}
 .ba{background:rgba(67,233,123,.1);border:1px solid rgba(67,233,123,.3);color:#43e97b;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer}
@@ -49,133 +51,344 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}textarea{resi
 .sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center}
 .sn{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800}
 .sl2{font-size:11px;color:var(--text2);margin-top:3px}
-table{width:100%;border-collapse:collapse}th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
 td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
 .lmo{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;font-size:13px;line-height:1.9;color:var(--text2);white-space:pre-wrap;margin-top:1rem}
 .cvd{border:2px dashed var(--border);border-radius:var(--r);padding:2rem;text-align:center;cursor:pointer;background:var(--bg2);transition:all .2s}
 .cvd:hover,.cvd.drag{border-color:var(--accent);background:rgba(108,99,255,.05)}
 .sk{background:rgba(108,99,255,.1);color:var(--accent);font-size:11px;padding:2px 8px;border-radius:99px;display:inline-block;margin:2px}
-.ab{background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.2);border-radius:var(--rs);padding:10px 16px;font-size:12px;color:var(--text2);margin-bottom:1rem;display:flex;align-items:center;gap:12px}
 .empty{text-align:center;padding:4rem;color:var(--text2);font-size:14px}
+/* AUTH */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem}
+.auth-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:2.5rem;width:100%;max-width:400px;text-align:center}
+.auth-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;background:linear-gradient(135deg,#6c63ff,#ff6584);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem}
+.auth-sub{color:var(--text2);font-size:13px;margin-bottom:2rem}
+.auth-input{text-align:left;margin-bottom:1rem}
+.auth-msg{font-size:13px;margin-top:1rem;padding:10px;border-radius:var(--rs)}
+.auth-msg.ok{background:rgba(67,233,123,.1);color:var(--accent3)}
+.auth-msg.err{background:rgba(255,101,132,.1);color:var(--accent2)}
+/* GROQ KEY */
+.key-row{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:8px 12px;margin-bottom:1rem}
+.key-row input{background:transparent;border:none;flex:1;font-size:12px;color:var(--text)}
+.key-saved{font-size:11px;color:var(--accent3);display:none}
 </style>
 </head>
 <body>
-<nav class="nav">
-  <div class="logo">AlterFind</div>
-  <div class="tabs">
-    <button class="tab active" onclick="go('search')">🔍 Offres</button>
-    <button class="tab" onclick="go('lettre')">✉️ Lettre</button>
-    <button class="tab" onclick="go('suivi')">📋 Suivi</button>
-  </div>
-  <span id="cvb" style="display:none;font-size:11px;color:var(--accent3);background:rgba(67,233,123,.1);padding:3px 10px;border-radius:99px">✓ CV chargé</span>
-</nav>
-<div class="main">
-  <div class="ab">🔑 Clé Groq gratuite sur <a href="https://console.groq.com" target="_blank" style="color:var(--accent)">console.groq.com</a> : <input id="gk" placeholder="gsk_..." style="flex:1;font-size:12px" oninput="localStorage.setItem('af_k',this.value)"></div>
-  <div class="card">
-    <div style="font-size:13px;font-weight:600;margin-bottom:10px">📄 Importe ton CV – auto-remplissage</div>
-    <div class="cvd" id="cvd" onclick="document.getElementById('cvf').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');hCV(event.dataTransfer.files[0])">
-      <input type="file" id="cvf" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="hCV(this.files[0])">
-      <div id="cvs"><p style="color:var(--text2);font-size:13px">📁 Glisse ton CV ici ou clique (PDF, PNG, JPG)</p></div>
-    </div>
-    <div id="cvsk" style="margin-top:8px"></div>
-    <div id="cve" style="color:var(--accent2);font-size:12px;margin-top:6px"></div>
-  </div>
 
-  <div class="page active" id="page-search">
-    <h1 class="h1">Trouve ton <span class="g1">alternance idéale</span></h1>
+<!-- AUTH PAGE -->
+<div id="auth-page" class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">AlterFind</div>
+    <div class="auth-sub">Trouve ton alternance idéale</div>
+    <div class="auth-input">
+      <label class="lbl">Adresse email</label>
+      <input type="email" id="auth-email" placeholder="ton@email.com" onkeydown="if(event.key==='Enter')sendMagicLink()">
+    </div>
+    <button class="btn bp" onclick="sendMagicLink()" id="auth-btn" style="width:100%">✉️ Recevoir le lien de connexion</button>
+    <div id="auth-msg" class="auth-msg" style="display:none"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <nav class="nav">
+    <div class="logo">AlterFind</div>
+    <div class="tabs">
+      <button class="tab active" onclick="go('search')">🔍 Offres</button>
+      <button class="tab" onclick="go('lettre')">✉️ Lettre</button>
+      <button class="tab" onclick="go('suivi')">📋 Suivi</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="cvb" style="display:none;font-size:11px;color:var(--accent3);background:rgba(67,233,123,.1);padding:3px 10px;border-radius:99px">✓ CV chargé</span>
+      <span id="user-email" style="font-size:11px;color:var(--text2)"></span>
+      <button class="bsm" onclick="signOut()">Déconnexion</button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <!-- GROQ KEY -->
+    <div class="card" style="padding:.8rem 1.2rem">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:12px;color:var(--text2);white-space:nowrap">🔑 Clé Groq (<a href="https://console.groq.com" target="_blank" style="color:var(--accent)">gratuite</a>) :</span>
+        <div class="key-row" style="flex:1;margin:0">
+          <input type="password" id="gk" placeholder="gsk_..." oninput="saveKey(this.value)">
+          <button onclick="toggleKey()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px" id="eye-btn">👁</button>
+        </div>
+        <span class="key-saved" id="key-saved">✓ Sauvegardée</span>
+      </div>
+    </div>
+
+    <!-- CV -->
     <div class="card">
-      <div class="g3c">
-        <div><label class="lbl">Mots-clés</label><input id="skw" placeholder="ex: management sport..." onkeydown="if(event.key==='Enter')doSearch()"></div>
-        <div><label class="lbl">Ville / Code postal</label><input id="sloc" placeholder="Paris, 95200..."></div>
-        <div style="display:flex;flex-direction:column;justify-content:flex-end"><button class="btn bp" onclick="doSearch()" id="sbtn" style="white-space:nowrap">Rechercher</button></div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">📄 Importe ton CV – auto-remplissage (PDF, PNG, JPG)</div>
+      <div class="cvd" id="cvd" onclick="document.getElementById('cvf').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');hCV(event.dataTransfer.files[0])">
+        <input type="file" id="cvf" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="hCV(this.files[0])">
+        <div id="cvs"><p style="color:var(--text2);font-size:13px">📁 Glisse ton CV ici ou clique (PDF, PNG, JPG)</p></div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <label class="lbl" style="margin:0;white-space:nowrap">Rayon :</label>
-        <select id="srad" style="width:auto;padding:4px 10px"><option value="10">10 km</option><option value="20">20 km</option><option value="35" selected>35 km</option><option value="50">50 km</option></select>
-      </div>
+      <div id="cvsk" style="margin-top:8px"></div>
+      <div id="cve" style="color:var(--accent2);font-size:12px;margin-top:6px"></div>
     </div>
-    <div class="dp" id="dp">
-      <div id="dpt" style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:6px"></div>
-      <div id="dpc" style="color:var(--text2);font-size:13px;margin-bottom:12px"></div>
-      <div class="sl">Type</div><div id="dpty" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
-      <div class="sl">Missions</div><div id="dpd" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
-      <div class="sl">Profil</div><div id="dpp" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button class="ba" id="dpsb" onclick="sfd()">✓ Sélectionner</button>
-        <button class="bd" onclick="dfd()">✗ Décliner</button>
-        <button class="bsm" onclick="cdet()">← Fermer</button>
-      </div>
-    </div>
-    <div id="sld" style="display:none;text-align:center;padding:3rem;color:var(--text2)"><div class="spin"></div>Recherche en cours...</div>
-    <div id="olist"></div>
-    <div class="vb" id="vb"><span style="font-size:13px;color:var(--text2)"><strong id="seln" style="color:var(--text)">0</strong> offre(s) sélectionnée(s)</span><button class="btn bp" onclick="doValidate()">Valider et postuler →</button></div>
-  </div>
 
-  <div class="page" id="page-lettre">
-    <h1 class="h1">Génère ta <span class="g2">lettre de motivation</span></h1>
-    <p id="pfm" style="color:var(--accent3);font-size:13px;text-align:center;margin-bottom:1rem;display:none">✓ Formulaire pré-rempli depuis ton CV</p>
-    <div class="card">
-      <div class="lbl" style="color:var(--accent);margin-bottom:12px">TON PROFIL</div>
-      <div class="g2c">
-        <div><label class="lbl">Prénom Nom</label><input id="ln" placeholder="Badr Djeriouat"></div>
-        <div><label class="lbl">Adresse</label><input id="la" placeholder="2 Av du 8 mai 1945, Sarcelles"></div>
-        <div><label class="lbl">Email</label><input id="le" placeholder="email@gmail.com"></div>
-        <div><label class="lbl">Téléphone</label><input id="lp" placeholder="06 XX XX XX XX"></div>
+    <!-- SEARCH -->
+    <div class="page active" id="page-search">
+      <h1 class="h1">Trouve ton <span class="g1">alternance idéale</span></h1>
+      <div class="card">
+        <div class="g3c">
+          <div><label class="lbl">Mots-clés</label><input type="text" id="skw" placeholder="ex: management sport..." onkeydown="if(event.key==='Enter')doSearch()"></div>
+          <div><label class="lbl">Ville / Code postal</label><input type="text" id="sloc" placeholder="Paris, 95200..."></div>
+          <div style="display:flex;flex-direction:column;justify-content:flex-end">
+            <button class="btn bp" onclick="doSearch()" id="sbtn" style="white-space:nowrap">Rechercher</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label class="lbl" style="margin:0;white-space:nowrap">Rayon :</label>
+          <select id="srad" style="width:auto;padding:4px 10px">
+            <option value="10">10 km</option><option value="20">20 km</option>
+            <option value="35" selected>35 km</option><option value="50">50 km</option>
+          </select>
+        </div>
       </div>
-      <div style="margin-bottom:16px"><label class="lbl">Ton parcours</label><textarea id="lpa" rows="3" placeholder="Ex: TP Négociateur Commercial, téléprospection EL Energy..."></textarea></div>
-      <div class="lbl" style="color:var(--accent);margin-bottom:12px">L'OFFRE</div>
-      <div class="g2c" style="margin-bottom:12px">
-        <div><label class="lbl">Entreprise</label><input id="lco" placeholder="NRJ Audio"></div>
-        <div><label class="lbl">Poste</label><input id="lpo" placeholder="Alternant Communication & RP"></div>
+      <div class="dp" id="dp">
+        <div id="dpt" style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:6px"></div>
+        <div id="dpc" style="color:var(--text2);font-size:13px;margin-bottom:12px"></div>
+        <div class="sl">Type</div><div id="dpty" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
+        <div class="sl">Missions</div><div id="dpd" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
+        <div class="sl">Profil</div><div id="dpp" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="ba" id="dpsb" onclick="sfd()">✓ Sélectionner</button>
+          <button class="bd" onclick="dfd()">✗ Décliner</button>
+          <button class="bsm" onclick="cdet()">← Fermer</button>
+        </div>
       </div>
-      <div style="margin-bottom:16px"><label class="lbl">Description de l'offre (optionnel)</label><textarea id="lof" rows="3" placeholder="Collez la description du poste ici..."></textarea></div>
-      <button class="btn bp" id="genb" onclick="genLM()" style="width:100%;font-size:15px;padding:12px">✦ Générer la lettre</button>
+      <div id="sld" style="display:none;text-align:center;padding:3rem;color:var(--text2)"><div class="spin"></div>Recherche en cours...</div>
+      <div id="olist"></div>
+      <div class="vb" id="vb">
+        <span style="font-size:13px;color:var(--text2)"><strong id="seln" style="color:var(--text)">0</strong> offre(s) sélectionnée(s)</span>
+        <button class="btn bp" onclick="doValidate()">Valider et postuler →</button>
+      </div>
     </div>
-    <div id="lmr" style="display:none">
-      <div class="lmo" id="lmt"></div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn bp" onclick="cpLM()">📋 Copier</button>
-        <button class="bsm" onclick="addFL()">+ Ajouter au suivi</button>
-      </div>
-    </div>
-  </div>
 
-  <div class="page" id="page-suivi">
-    <h1 class="h1">Suivi des <span class="g3">candidatures</span></h1>
-    <div class="sg" id="stg"></div>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:.8rem"><button class="bsm" onclick="tAdd()">+ Ajouter</button></div>
-    <div class="card" id="adf" style="display:none">
-      <div class="g2c">
-        <div><label class="lbl">Entreprise</label><input id="fco"></div>
-        <div><label class="lbl">Poste</label><input id="fro"></div>
-        <div><label class="lbl">Type</label><select id="fty"><option value="alternance">Alternance</option><option value="cdd">CDD</option><option value="cdi">CDI</option><option value="stage">Stage</option></select></div>
+    <!-- LETTRE -->
+    <div class="page" id="page-lettre">
+      <h1 class="h1">Génère ta <span class="g2">lettre de motivation</span></h1>
+      <p id="pfm" style="color:var(--accent3);font-size:13px;text-align:center;margin-bottom:1rem;display:none">✓ Formulaire pré-rempli depuis ton CV</p>
+      <div class="card">
+        <div class="lbl" style="color:var(--accent);margin-bottom:12px">TON PROFIL</div>
+        <div class="g2c">
+          <div><label class="lbl">Prénom Nom</label><input type="text" id="ln" placeholder="Badr Djeriouat"></div>
+          <div><label class="lbl">Adresse</label><input type="text" id="la" placeholder="2 Av du 8 mai 1945, Sarcelles"></div>
+          <div><label class="lbl">Email</label><input type="text" id="le" placeholder="email@gmail.com"></div>
+          <div><label class="lbl">Téléphone</label><input type="text" id="lp" placeholder="06 XX XX XX XX"></div>
+        </div>
+        <div style="margin-bottom:16px"><label class="lbl">Ton parcours</label><textarea id="lpa" rows="3" placeholder="Ex: TP Négociateur Commercial, téléprospection EL Energy..."></textarea></div>
+        <div class="lbl" style="color:var(--accent);margin-bottom:12px">L'OFFRE</div>
+        <div class="g2c" style="margin-bottom:12px">
+          <div><label class="lbl">Entreprise</label><input type="text" id="lco" placeholder="NRJ Audio"></div>
+          <div><label class="lbl">Poste</label><input type="text" id="lpo" placeholder="Alternant Communication & RP"></div>
+        </div>
+        <div style="margin-bottom:16px"><label class="lbl">Description de l'offre (optionnel)</label><textarea id="lof" rows="3" placeholder="Collez la description du poste ici..."></textarea></div>
+        <button class="btn bp" id="genb" onclick="genLM()" style="width:100%;font-size:15px;padding:12px">✦ Générer la lettre</button>
       </div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="btn bp" onclick="addM()" style="padding:7px 16px;font-size:13px">Ajouter</button>
-        <button class="bsm" onclick="tAdd()">Annuler</button>
+      <div id="lmr" style="display:none">
+        <div class="lmo" id="lmt"></div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn bp" onclick="cpLM()">📋 Copier</button>
+          <button class="bsm" onclick="addFL()">+ Ajouter au suivi</button>
+        </div>
       </div>
     </div>
-    <div id="suivi-content"></div>
+
+    <!-- SUIVI -->
+    <div class="page" id="page-suivi">
+      <h1 class="h1">Suivi des <span class="g3">candidatures</span></h1>
+      <div class="sg" id="stg"></div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:.8rem">
+        <button class="bsm" onclick="tAdd()">+ Ajouter</button>
+      </div>
+      <div class="card" id="adf" style="display:none">
+        <div class="g2c">
+          <div><label class="lbl">Entreprise</label><input type="text" id="fco"></div>
+          <div><label class="lbl">Poste</label><input type="text" id="fro"></div>
+          <div><label class="lbl">Type</label>
+            <select id="fty"><option value="alternance">Alternance</option><option value="cdd">CDD</option><option value="cdi">CDI</option><option value="stage">Stage</option></select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn bp" onclick="addM()" style="padding:7px 16px;font-size:13px">Ajouter</button>
+          <button class="bsm" onclick="tAdd()">Annuler</button>
+        </div>
+      </div>
+      <div id="suivi-content"></div>
+    </div>
   </div>
 </div>
 
 <script>
-var offers=[],sel=new Set(),dec=new Set(),cur=null
-var cands=JSON.parse(localStorage.getItem('af_c')||'[]')
+// ── SUPABASE ──
+const SB_URL = 'https://fuvhzuqqozperhbflbek.supabase.co'
+const SB_KEY = 'sb_publishable_xGgPo1ROMYbTpcdL83QM6Q_4FzReaTK'
+const sb = supabase.createClient(SB_URL, SB_KEY)
+
+// ── STATE ──
+var offers=[], sel=new Set(), dec=new Set(), cur=null
+var cands=[]
+var currentUser=null
+
 var $=function(id){return document.getElementById(id)}
 
-window.onload=function(){
-  var k=localStorage.getItem('af_k');if(k)$('gk').value=k
+// ── AUTH ──
+window.onload = async function(){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+  
+  const {data:{session}} = await sb.auth.getSession()
+  if(session){
+    currentUser = session.user
+    showApp()
+  }
+
+  sb.auth.onAuthStateChange(function(event, session){
+    if(event === 'SIGNED_IN' && session){
+      currentUser = session.user
+      showApp()
+    } else if(event === 'SIGNED_OUT'){
+      showAuth()
+    }
+  })
+}
+
+async function sendMagicLink(){
+  var email = $('auth-email').value.trim()
+  if(!email){ showMsg('Entre ton adresse email', 'err'); return }
+  var btn = $('auth-btn')
+  btn.disabled = true; btn.textContent = '⏳ Envoi...'
+  var {error} = await sb.auth.signInWithOtp({
+    email: email,
+    options: { emailRedirectTo: window.location.href }
+  })
+  if(error){
+    showMsg('Erreur : ' + error.message, 'err')
+  } else {
+    showMsg('✅ Lien envoyé ! Vérifie ta boîte mail et clique sur le lien.', 'ok')
+  }
+  btn.disabled = false; btn.textContent = '✉️ Recevoir le lien de connexion'
+}
+
+function showMsg(txt, type){
+  var el = $('auth-msg')
+  el.textContent = txt
+  el.className = 'auth-msg ' + type
+  el.style.display = 'block'
+}
+
+async function signOut(){
+  await sb.auth.signOut()
+}
+
+function showApp(){
+  $('auth-page').style.display = 'none'
+  $('app').style.display = 'block'
+  if(currentUser) $('user-email').textContent = currentUser.email
+  var k = localStorage.getItem('af_k')
+  if(k){ $('gk').value = k; showKeySaved() }
+  loadCands()
   renderSuivi()
 }
 
+function showAuth(){
+  $('app').style.display = 'none'
+  $('auth-page').style.display = 'flex'
+  currentUser = null
+}
+
+// ── GROQ KEY ──
+function saveKey(v){
+  localStorage.setItem('af_k', v)
+  showKeySaved()
+}
+
+function showKeySaved(){
+  var el = $('key-saved')
+  el.style.display = 'inline'
+  setTimeout(function(){ el.style.display = 'none' }, 2000)
+}
+
+function toggleKey(){
+  var inp = $('gk')
+  var btn = $('eye-btn')
+  if(inp.type === 'password'){
+    inp.type = 'text'
+    btn.textContent = '🙈'
+  } else {
+    inp.type = 'password'
+    btn.textContent = '👁'
+  }
+}
+
+// ── NAV ──
 function go(p){
   document.querySelectorAll('.page').forEach(function(e){e.classList.remove('active')})
   document.querySelectorAll('.tab').forEach(function(e){e.classList.remove('active')})
   $('page-'+p).classList.add('active')
   var idx=['search','lettre','suivi'].indexOf(p)
   document.querySelectorAll('.tab')[idx].classList.add('active')
-  if(p==='suivi')renderSuivi()
+  if(p==='suivi') renderSuivi()
+}
+
+// ── CV (PDF + Image) ──
+async function hCV(file){
+  if(!file) return
+  var key = $('gk').value.trim()
+  if(!key){ $('cve').textContent='⚠️ Entre ta clé Groq pour analyser le CV'; return }
+  $('cvs').innerHTML='<p style="color:var(--text2)">⏳ Analyse en cours...</p>'
+  $('cve').textContent=''
+  try{
+    var b64, mime
+    if(file.type === 'application/pdf'){
+      // Convertir PDF en image via PDF.js
+      var arrayBuffer = await file.arrayBuffer()
+      var pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise
+      var page = await pdf.getPage(1)
+      var viewport = page.getViewport({scale: 2})
+      var canvas = document.createElement('canvas')
+      canvas.width = viewport.width
+      canvas.height = viewport.height
+      await page.render({canvasContext: canvas.getContext('2d'), viewport: viewport}).promise
+      b64 = canvas.toDataURL('image/jpeg', 0.9).split(',')[1]
+      mime = 'image/jpeg'
+    } else {
+      b64 = await fb64(file)
+      mime = file.type || 'image/jpeg'
+    }
+
+    var prompt = 'Extrais les infos de ce CV. Retourne UNIQUEMENT un JSON valide sans markdown: {"name":"","email":"","phone":"","address":"","skills":[],"searchKeywords":"mots-cles emploi","parcours":"Resume 2-3 phrases pour lettre motivation"}'
+    var res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:'meta-llama/llama-4-scout-17b-16e-instruct',messages:[{role:'user',content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:'data:'+mime+';base64,'+b64}}]}],max_tokens:600,temperature:0.1})
+    })
+    var data = await res.json()
+    if(!res.ok) throw new Error(data.error&&data.error.message||'Erreur Groq')
+    var txt = data.choices[0].message.content.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim()
+    var p = JSON.parse(txt)
+    $('cvs').innerHTML='<p style="color:var(--accent3)">✅ CV analysé – '+(p.name||'')+'</p>'
+    $('cvb').style.display='block'
+    $('pfm').style.display='block'
+    if(p.name) $('ln').value=p.name
+    if(p.address) $('la').value=p.address
+    if(p.email) $('le').value=p.email
+    if(p.phone) $('lp').value=p.phone
+    if(p.parcours) $('lpa').value=p.parcours
+    if(p.searchKeywords) $('skw').value=p.searchKeywords
+    if(p.address){var m=p.address.match(/\d{5}/);if(m) $('sloc').value=m[0]}
+    if(p.skills&&p.skills.length) $('cvsk').innerHTML=p.skills.map(function(s){return'<span class="sk">'+s+'</span>'}).join('')
+  }catch(e){
+    $('cvs').innerHTML='<p style="color:var(--text2)">📁 Glisse ton CV ici ou clique (PDF, PNG, JPG)</p>'
+    $('cve').textContent='⚠️ '+e.message
+  }
 }
 
 function fb64(file){
@@ -187,41 +400,7 @@ function fb64(file){
   })
 }
 
-async function hCV(file){
-  if(!file)return
-  var key=$('gk').value.trim()
-  if(!key){$('cve').textContent='⚠️ Entre ta clé Groq pour analyser le CV';return}
-  $('cvs').innerHTML='<p style="color:var(--text2)">⏳ Analyse en cours...</p>'
-  $('cve').textContent=''
-  try{
-    var b64=await fb64(file)
-    var mime=file.type||'image/jpeg'
-    var prompt='Extrais les infos de ce CV. Retourne UNIQUEMENT un JSON valide sans markdown: {"name":"","email":"","phone":"","address":"","skills":[],"searchKeywords":"mots-cles emploi","parcours":"Resume 2-3 phrases pour lettre motivation"}'
-    var res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:'meta-llama/llama-4-scout-17b-16e-instruct',messages:[{role:'user',content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:'data:'+mime+';base64,'+b64}}]}],max_tokens:600,temperature:0.1})
-    })
-    var data=await res.json()
-    if(!res.ok)throw new Error(data.error&&data.error.message||'Erreur Groq')
-    var txt=data.choices[0].message.content.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim()
-    var p=JSON.parse(txt)
-    $('cvs').innerHTML='<p style="color:var(--accent3)">✅ CV analysé – '+(p.name||'')+'</p>'
-    $('cvb').style.display='block';$('pfm').style.display='block'
-    if(p.name)$('ln').value=p.name
-    if(p.address)$('la').value=p.address
-    if(p.email)$('le').value=p.email
-    if(p.phone)$('lp').value=p.phone
-    if(p.parcours)$('lpa').value=p.parcours
-    if(p.searchKeywords)$('skw').value=p.searchKeywords
-    if(p.address){var m=p.address.match(/\d{5}/);if(m)$('sloc').value=m[0]}
-    if(p.skills&&p.skills.length)$('cvsk').innerHTML=p.skills.map(function(s){return'<span class="sk">'+s+'</span>'}).join('')
-  }catch(e){
-    $('cvs').innerHTML='<p style="color:var(--text2)">📁 Glisse ton CV ici ou clique</p>'
-    $('cve').textContent='⚠️ '+e.message
-  }
-}
-
+// ── SEARCH ──
 function getDemos(kw,loc){
   return[
     {id:'d1',title:'Alternance – '+(kw||'Commercial')+' Junior',company:'SportCo',location:loc||'Paris 75',dist:12,url:'#',type:'Alternance · Bac+3 · Démarrage sept. 2026',desc:'Prospection BtoB, gestion portefeuille clients, CRM, participation aux événements.',profil:'Bac+3 commerce. Dynamique, autonome, sens commercial.'},
@@ -246,7 +425,7 @@ function renderOffers(){
   if(!vis.length){list.innerHTML='<div class="empty">Aucune offre. Modifie tes critères.</div>';return}
   list.innerHTML=vis.map(function(o){
     var s=sel.has(o.id)
-    return '<div class="oc'+(s?' sel':'')+'" id="oc-'+o.id+'" onclick="odet(\''+o.id+'\')">'
+    return'<div class="oc'+(s?' sel':'')+'" id="oc-'+o.id+'" onclick="odet(\''+o.id+'\')">'
       +'<div class="chk'+(s?' on':'')+'" onclick="event.stopPropagation();tSel(\''+o.id+'\')">'+(s?'<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="2,5 4,8 8,2" stroke="white" stroke-width="2" fill="none"/></svg>':'')+'</div>'
       +'<div style="flex:1"><div class="otitle">'+o.title+'</div><div class="ometa"><span>🏢 '+o.company+'</span><span>📍 '+o.location+'</span><span class="tdist">'+o.dist+'km</span></div></div>'
       +'<button onclick="event.stopPropagation();dOff(\''+o.id+'\')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:0 4px">✗</button>'
@@ -276,6 +455,7 @@ function doValidate(){
   alert(s.length+' offre(s) ouvertes et ajoutées au suivi !');sel.clear();updVB();renderOffers()
 }
 
+// ── LETTRE ──
 async function genLM(){
   var co=$('lco').value.trim(),po=$('lpo').value.trim();if(!co||!po)return
   var key=$('gk').value.trim();if(!key){alert('Entre ta clé Groq pour générer la lettre !');return}
@@ -296,16 +476,39 @@ async function genLM(){
 function cpLM(){navigator.clipboard.writeText($('lmt').textContent).then(function(){alert('Copié !')})}
 function addFL(){addCand($('lco').value,$('lpo').value);go('suivi')}
 
-function saveC(){localStorage.setItem('af_c',JSON.stringify(cands))}
-function addCand(co,ro,ty){
-  ty=ty||'alternance'
-  cands.unshift({id:Date.now().toString(),company:co,role:ro.substring(0,60),type:ty,date:new Date().toLocaleDateString('fr-FR'),status:'Envoyée',response:''})
-  saveC();renderSuivi()
+// ── SUIVI (Supabase) ──
+async function loadCands(){
+  if(!currentUser) return
+  var {data,error} = await sb.from('candidatures').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false})
+  if(!error && data) { cands=data; renderSuivi() }
 }
+
+async function addCand(co,ro,ty){
+  ty=ty||'alternance'
+  var row={user_id:currentUser.id,company:co,role:ro.substring(0,60),type:ty,date:new Date().toLocaleDateString('fr-FR'),status:'Envoyée',response:''}
+  var {data,error}=await sb.from('candidatures').insert(row).select().single()
+  if(!error&&data){cands.unshift(data);renderSuivi()}
+}
+
 function tAdd(){var f=$('adf');f.style.display=f.style.display==='none'?'block':'none'}
-function addM(){var c=$('fco').value.trim();if(!c)return;addCand(c,$('fro').value,$('fty').value);$('fco').value='';$('fro').value='';tAdd()}
-function updC(id,f,v){cands=cands.map(function(c){return c.id===id?Object.assign({},c,Object.fromEntries([[f,v]])):c});saveC();if(f==='status')renderStats()}
-function delC(id){cands=cands.filter(function(c){return c.id!==id});saveC();renderSuivi()}
+
+function addM(){
+  var c=$('fco').value.trim();if(!c)return
+  addCand(c,$('fro').value,$('fty').value)
+  $('fco').value='';$('fro').value='';tAdd()
+}
+
+async function updC(id,f,v){
+  var upd={}; upd[f]=v
+  await sb.from('candidatures').update(upd).eq('id',id)
+  cands=cands.map(function(c){return c.id===id?Object.assign({},c,upd):c})
+  if(f==='status')renderStats()
+}
+
+async function delC(id){
+  await sb.from('candidatures').delete().eq('id',id)
+  cands=cands.filter(function(c){return c.id!==id});renderSuivi()
+}
 
 var SC={'Envoyée':'#6c63ff','En attente':'#ffc800','Entretien':'#43e97b','Acceptée':'#43e97b','Refusée':'#ff6584'}
 var SS=['Envoyée','En attente','Entretien','Acceptée','Refusée']
