@@ -143,19 +143,7 @@ td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-al
   </nav>
 
   <div class="main">
-    <!-- GROQ KEY -->
-    <div class="card" style="padding:.8rem 1.2rem">
-      <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:12px;color:var(--text2);white-space:nowrap">🔑 Clé Groq (<a href="https://console.groq.com" target="_blank" style="color:var(--accent)">gratuite</a>) :</span>
-        <div class="key-row" style="flex:1;margin:0">
-          <input type="password" id="gk" placeholder="gsk_..." oninput="saveKey(this.value)">
-          <button onclick="toggleKey()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px" id="eye-btn">👁</button>
-        </div>
-        <span class="key-saved" id="key-saved">✓ Sauvegardée</span>
-      </div>
-      <span class="key-saved" id="ft-saved" style="display:none">✓</span
-      </div>
-    </div>
+    <input type="hidden" id="gk">
 
     <!-- CV -->
     <div class="card">
@@ -456,8 +444,7 @@ function showApp(){
   $('auth-page').style.display = 'none'
   $('app').style.display = 'block'
   if(currentUser) $('user-email').textContent = currentUser.email
-  var k = localStorage.getItem('af_k')
-  if(k){ $('gk').value = k; showKeySaved() }
+  $('gk').value = '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'
 
   loadCands()
   renderSuivi()
@@ -526,7 +513,7 @@ async function pdfToBase64(file){
 async function hCV(file){
   if(!file) return
   var key = $('gk').value.trim()
-  if(!key){ $('cve').textContent='⚠️ Entre ta clé Groq pour analyser le CV'; return }
+  
   $('cvs').innerHTML='<p style="color:var(--text2)">⏳ Analyse de '+file.name+'...</p>'
   $('cve').textContent=''
   try{
@@ -647,17 +634,21 @@ function getDemos(kw,loc){
     {id:'d15',title:'Account Manager Séminaires',company:'Best Western Hotels',location:loc||'Colombes 92',dist:22,url:'https://candidat.francetravail.fr/offres/recherche',type:'Alternance 24 mois · Mutuelle 94% + RTT',desc:'Développement CA séminaires sur réseau 30 hôtels France, prospection comptes à potentiel, gestion cycle de vente complet, CRM Salesforce.',profil:'Bac+3 à +5 commerce. Aisance relationnelle, négociation, Pack Office, anglais opérationnel.'},
   ]
   // Filtrer par mots-clés si pertinent
-  var kl=kw.toLowerCase()
-  var filtered=all.filter(function(o){
-    return o.title.toLowerCase().includes(kl)||o.desc.toLowerCase().includes(kl)||o.profil.toLowerCase().includes(kl)||o.company.toLowerCase().includes(kl)
+  var kl=kw.toLowerCase().trim()
+  var keywords=kl.split(/\s+/)
+  // Score chaque offre selon le nombre de mots-clés matchés
+  var scored=all.map(function(o){
+    var txt=(o.title+' '+o.desc+' '+o.profil+' '+o.company+' '+o.type).toLowerCase()
+    var score=keywords.reduce(function(acc,k){return acc+(txt.includes(k)?1:0)},0)
+    return {o:o, score:score}
   })
-  var pool=filtered.length>=3?filtered:all
-  // Mélanger et exclure les derniers affichés
-  var available=pool.filter(function(o){return!_lastOfferIds.includes(o.id)})
-  if(available.length<5) available=pool.slice() // reset si plus assez
-  // Mélanger aléatoirement
-  available.sort(function(){return Math.random()-.5})
-  var result=available.slice(0,5)
+  // Garder uniquement celles qui matchent au moins 1 mot-clé
+  var matched=scored.filter(function(x){return x.score>0}).sort(function(a,b){return b.score-a.score})
+  if(matched.length===0){
+    // Aucun match : afficher message vide
+    return []
+  }
+  var result=matched.slice(0,5).map(function(x){return x.o})
   _lastOfferIds=result.map(function(o){return o.id})
   return result
 }
@@ -695,6 +686,11 @@ async function doSearch(){
   } else {
     // Fallback offres démo
     offers = getDemos(kw, $('sloc').value)
+    if(offers.length === 0){
+      $('sld').style.display='none';$('sbtn').disabled=false
+      $('olist').innerHTML='<div class="empty">Aucune offre trouvée pour "'+kw+'". Essaie des mots-clés différents.</div>'
+      return
+    }
   }
   
   $('sld').style.display='none';$('sbtn').disabled=false
@@ -763,7 +759,7 @@ async function doValidate(){
 // ── LETTRE ──
 async function genLM(){
   var co=$('lco').value.trim(),po=$('lpo').value.trim();if(!co||!po)return
-  var key=$('gk').value.trim();if(!key){alert('Entre ta clé Groq pour générer la lettre !');return}
+  var key=$('gk').value.trim()
   var btn=$('genb');btn.disabled=true;btn.textContent='⏳ Génération...'
   $('lmr').style.display='none'
   var prompt='Rédige une lettre de motivation professionnelle en français pour '+($('ln').value||'le candidat')+' qui postule au poste de '+po+' chez '+co+'.\nAdresse : '+$('la').value+'\nEmail : '+$('le').value+'\nTéléphone : '+$('lp').value+'\nParcours : '+($('lpa').value||'étudiant en recherche d\'alternance')+'\nDescription du poste : '+($('lof').value||'non fournie')+'\nRédige la lettre complète avec en-tête, 3-4 paragraphes et formule de politesse. Pas de crochets ni placeholders.'
