@@ -82,8 +82,26 @@ td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-al
   <div class="auth-box">
     <div class="auth-logo">AlterFind</div>
     <div class="auth-sub">Trouve ton alternance idéale</div>
-    <button class="btn bp" onclick="signInGoogle()" id="auth-btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 20px">
-      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFF" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>
+    <div id="auth-tabs" style="display:flex;gap:4px;background:var(--bg3);border-radius:10px;padding:4px;margin-bottom:1.5rem">
+      <button class="tab active" onclick="switchAuthTab('login')" id="tab-login" style="flex:1">Connexion</button>
+      <button class="tab" onclick="switchAuthTab('signup')" id="tab-signup" style="flex:1">Inscription</button>
+    </div>
+    <div class="auth-input">
+      <label class="lbl">Adresse email</label>
+      <input type="email" id="auth-email" placeholder="ton@email.com">
+    </div>
+    <div class="auth-input">
+      <label class="lbl">Mot de passe</label>
+      <input type="password" id="auth-pwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')authSubmit()">
+    </div>
+    <button class="btn bp" onclick="authSubmit()" id="auth-btn" style="width:100%;margin-bottom:12px">Connexion</button>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:12px;color:var(--text2)">ou</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+    <button class="btn" onclick="signInGoogle()" style="width:100%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 20px">
+      <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFF" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>
       Continuer avec Google
     </button>
     <div id="auth-msg" class="auth-msg" style="display:none"></div>
@@ -270,6 +288,44 @@ window.onload = async function(){
       showAuth()
     }
   })
+}
+
+var authMode = 'login'
+
+function switchAuthTab(mode){
+  authMode = mode
+  document.querySelectorAll('#auth-tabs .tab').forEach(function(t){t.classList.remove('active')})
+  document.getElementById('tab-'+mode).classList.add('active')
+  var btn = document.getElementById('auth-btn')
+  btn.textContent = mode === 'login' ? 'Connexion' : 'Créer mon compte'
+}
+
+async function authSubmit(){
+  var email = $('auth-email').value.trim()
+  var pwd = $('auth-pwd').value
+  if(!email || !pwd){ showMsg('Remplis tous les champs', 'err'); return }
+  if(pwd.length < 6){ showMsg('Mot de passe : 6 caractères minimum', 'err'); return }
+  var btn = $('auth-btn')
+  btn.disabled = true; btn.textContent = '⏳...'
+  var res, error
+  if(authMode === 'login'){
+    res = await sb.auth.signInWithPassword({email: email, password: pwd})
+    error = res.error
+    if(error && error.message.includes('Invalid login')){
+      showMsg('Email ou mot de passe incorrect', 'err')
+      btn.disabled = false; btn.textContent = 'Connexion'; return
+    }
+  } else {
+    res = await sb.auth.signUp({email: email, password: pwd})
+    error = res.error
+    if(!error && res.data.user && !res.data.session){
+      showMsg('✅ Compte créé ! Vérifie ta boîte mail pour confirmer.', 'ok')
+      btn.disabled = false; btn.textContent = 'Créer mon compte'; return
+    }
+  }
+  if(error){ showMsg('Erreur : ' + error.message, 'err') }
+  btn.disabled = false
+  btn.textContent = authMode === 'login' ? 'Connexion' : 'Créer mon compte'
 }
 
 async function signInGoogle(){
