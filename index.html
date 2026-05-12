@@ -342,19 +342,13 @@ function saveFTKey(){
   setTimeout(function(){el.style.display='none'},2000)
 }
 
-var FT_ID = 'PAR_alterfind2_18b1396f135ae37888714e3fe5203d0c2cc79cf365afff89e06e9fbe4d157fec'
-var FT_SECRET = '030384aa1c4542a3b5a12bdca2649e6e635265f9728dfad82954f1f474a8b17e'
 var _ftToken = null
 var _ftTokenExp = 0
 
 async function getFTToken(){
   if(_ftToken && Date.now() < _ftTokenExp) return _ftToken
   try{
-    var res = await fetch('https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=%2Fpartenaire', {
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:'grant_type=client_credentials&client_id='+encodeURIComponent(FT_ID)+'&client_secret='+encodeURIComponent(FT_SECRET)+'&scope=api_offresdemploiv2+o2dsoffre'
-    })
+    var res = await fetch('/api/token', {method:'POST'})
     var data = await res.json()
     console.log('FT token response:', data)
     _ftToken = data.access_token || null
