@@ -357,21 +357,40 @@ async function getFTToken(){
   }catch(e){ console.error('FT token error:', e); return null }
 }
 
+async function getCityCode(loc){
+  if(!loc) return null
+  try{
+    // Si code postal direct
+    var cpMatch = loc.match(/\b(\d{5})\b/)
+    if(cpMatch){
+      var r = await fetch('https://geo.api.gouv.fr/communes?codePostal='+cpMatch[1]+'&fields=code&limit=1')
+      var d = await r.json()
+      return d[0] ? d[0].code : null
+    }
+    // Sinon nom de ville
+    var r = await fetch('https://geo.api.gouv.fr/communes?nom='+encodeURIComponent(loc)+'&fields=code&limit=1')
+    var d = await r.json()
+    return d[0] ? d[0].code : null
+  }catch(e){ return null }
+}
+
 async function searchFTOffers(kw, loc){
   var token = await getFTToken()
-  console.log('FT token:', token ? 'OK' : 'FAILED')
   if(!token) return null
   try{
-    var params = new URLSearchParams({motsCles: kw, range: '0-9', sort: 1})
+    var p = {motsCles: kw, range: '0-14', sort: 1}
+    if(loc){
+      var code = await getCityCode(loc)
+      if(code){ p.commune = code; p.distance = $('srad').value || 35 }
+    }
+    var params = new URLSearchParams(p)
     var res = await fetch('https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search?'+params, {
       headers:{'Authorization':'Bearer '+token,'Accept':'application/json'}
     })
-    console.log('FT search status:', res.status)
-    if(!res.ok){ console.error('FT error:', await res.text()); return null }
+    if(!res.ok) return null
     var data = await res.json()
-    console.log('FT results:', data.resultats ? data.resultats.length : 0)
     return data.resultats || null
-  }catch(e){ console.error('FT exception:', e); return null }
+  }catch(e){ return null }
 }
 
 var authMode = 'login'
@@ -666,7 +685,7 @@ async function doSearch(){
         title: o.intitule || 'Poste',
         company: (o.entreprise && o.entreprise.nom) || 'Entreprise',
         location: (o.lieuTravail && o.lieuTravail.libelle) || '',
-        dist: 0,
+        dist: o.lieuTravail && o.lieuTravail.distance ? Math.round(o.lieuTravail.distance) : '',
         url: offerUrl,
         type: [o.typeContratLibelle, o.salaire && o.salaire.libelle].filter(Boolean).join(' · '),
         desc: o.description ? o.description.substring(0,300)+'...' : '',
