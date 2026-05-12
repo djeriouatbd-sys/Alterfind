@@ -203,10 +203,11 @@ td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-al
         <div class="sl">Type</div><div id="dpty" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
         <div class="sl">Missions</div><div id="dpd" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
         <div class="sl">Profil</div><div id="dpp" style="font-size:13px;color:var(--text2);line-height:1.7"></div>
-        <div style="display:flex;gap:8px;margin-top:12px">
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
           <button class="ba" id="dpsb" onclick="sfd()">✓ Sélectionner</button>
           <button class="bd" onclick="dfd()">✗ Décliner</button>
           <button class="bsm" onclick="cdet()">← Fermer</button>
+          <a id="dp-link" href="#" target="_blank" style="display:none;font-size:12px;color:var(--accent);background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.3);border-radius:8px;padding:6px 14px;text-decoration:none">🔗 Voir l'offre</a>
         </div>
       </div>
       <div id="sld" style="display:none;text-align:center;padding:3rem;color:var(--text2)"><div class="spin"></div>Recherche en cours...</div>
@@ -723,6 +724,9 @@ function odet(id){
   $('dpt').textContent=o.title;$('dpc').textContent=o.company+' · '+o.location+' · '+o.dist+'km'
   $('dpty').textContent=o.type;$('dpd').textContent=o.desc;$('dpp').textContent=o.profil
   $('dpsb').textContent=sel.has(id)?'✗ Désélectionner':'✓ Sélectionner'
+  var lnk=$('dp-link')
+  if(o.url && o.url!=='#'){ lnk.href=o.url; lnk.style.display='inline-block' }
+  else { lnk.style.display='none' }
   $('dp').classList.add('open');$('dp').scrollIntoView({behavior:'smooth',block:'start'})
 }
 function sfd(){if(cur){tSel(cur.id);odet(cur.id)}}
@@ -734,7 +738,6 @@ async function doValidate(){
   if(!s.length) return
   // Ouvrir les liens Indeed
   s.forEach(function(o){
-    if(o.url && o.url!=='#') window.open(o.url,'_blank')
     addCand(o.company,o.title)
   })
   // Pré-remplir lettre avec la première offre
